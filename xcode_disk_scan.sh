@@ -3,7 +3,7 @@
 #  xcode_disk_scan.sh  —  Xcode Disk Scan (v2)
 #  Usage:  bash xcode_disk_scan.sh
 #  Scans Xcode-related cache/data folders and generates
-#  an HTML report in Result/xcode_report.html
+#  an HTML report in /tmp/DiskScanReports/xcode_report.html
 # ─────────────────────────────────────────────
 
 XCODE_DEV="$HOME/Library/Developer/Xcode"
@@ -423,8 +423,8 @@ report["review_total"] = review_total
 # ──────────────────────────────────────────────
 #  GENERATE HTML REPORT
 # ──────────────────────────────────────────────
-template_path = os.path.join(script_dir, "xcode_report_template.html")
-result_dir = os.path.join(script_dir, "Result")
+template_path = os.path.join(script_dir, "ReportTemplates", "xcode_report_template.html")
+result_dir = "/tmp/DiskScanReports"
 result_path = os.path.join(result_dir, "xcode_report.html")
 
 if os.path.isfile(template_path):

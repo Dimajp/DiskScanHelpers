@@ -10,6 +10,23 @@ No dependencies beyond what ships with macOS (`bash`, `du`, `python3`).
 
 ---
 
+## Project structure
+
+```
+DiskScanHelpers/
+├── disk_scan.sh                 # General disk usage scanner
+├── xcode_disk_scan.sh           # Xcode-specific scanner
+└── ReportTemplates/
+    ├── disk_report_template.html
+    └── xcode_report_template.html
+
+/tmp/DiskScanReports/            # Generated reports — cleared on reboot
+├── disk_report.html
+└── xcode_report.html
+```
+
+---
+
 ## xcode_disk_scan — Xcode Disk Scan
 
 Scans Xcode-related cache/data folders, prints sizes, and suggests cleanup actions split by **safety tier**.
@@ -20,7 +37,7 @@ Scans Xcode-related cache/data folders, prints sizes, and suggests cleanup actio
 bash xcode_disk_scan.sh
 ```
 
-Opens `Result/xcode_report.html` automatically.
+Opens `/tmp/DiskScanReports/xcode_report.html` automatically.
 
 ### What it shows
 
@@ -55,14 +72,6 @@ Read-only — **nothing is deleted unless you copy a command and run it yourself
 
 Visual disk usage analyzer that generates an interactive HTML report for any folder. Useful for hunting storage hogs outside Xcode too.
 
-### Files
-
-| File | Purpose |
-|---|---|
-| `disk_scan.sh` | Main script — scans disk, builds data, generates report |
-| `disk_report_template.html` | HTML template (never modified by the script) |
-| `Result/disk_report.html` | Generated report with embedded data |
-
 ### Usage
 
 ```bash
@@ -85,7 +94,7 @@ bash disk_scan.sh / 2                      # whole disk, shallow
 1. Runs `du` to collect directory sizes
 2. Embedded Python builds a tree structure from the `du` output
 3. Injects the JSON data into the HTML template
-4. Saves the result to `Result/disk_report.html` and opens it
+4. Saves the result to `/tmp/DiskScanReports/disk_report.html` and opens it
 
 The template is never modified — data is injected into a copy. Re-running the script overwrites the previous result.
 
@@ -131,7 +140,7 @@ bash xcode_disk_scan.sh   # or disk_scan.sh
 
 ## Output
 
-Each script generates a self-contained HTML file under `Result/`. The report opens automatically in your default browser.
+Each script generates a self-contained HTML file under `/tmp/DiskScanReports/`. The report opens automatically in your default browser, and `/tmp/` is cleared on system reboot — so old reports don't pile up.
 
 ---
 

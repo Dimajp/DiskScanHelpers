@@ -8,7 +8,7 @@
 TARGET="${1:-$HOME}"
 DEPTH="${2:-3}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-OUT_HTML="$SCRIPT_DIR/disk_report_template.html"
+OUT_HTML="$SCRIPT_DIR/ReportTemplates/disk_report_template.html"
 
 echo "🔍 Scanning: $TARGET (depth $DEPTH) ..."
 echo "   This may take a moment..."
@@ -32,8 +32,8 @@ TOTAL_BYTES=$(( TOTAL_BLOCKS * 512 ))
 
 echo "   Total: $(human $TOTAL_BYTES)"
 
-# ── Build data and inject into HTML template → Result/
-RESULT_DIR="$SCRIPT_DIR/Result"
+# ── Build data and inject into HTML template → /tmp/DiskScanReports/
+RESULT_DIR="/tmp/DiskScanReports"
 mkdir -p "$RESULT_DIR"
 RESULT_HTML="$RESULT_DIR/disk_report.html"
 
