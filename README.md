@@ -6,6 +6,8 @@ Xcode caches (DerivedData, simulators, archives, device support) can quietly gro
 
 No dependencies beyond what ships with macOS (`bash`, `du`, `python3`).
 
+![DiskScanHelpers — Xcode cleanup and disk usage reports side by side](docs/screenshots/hero.png)
+
 ---
 
 ## xcode_disk_scan — Xcode Disk Scan
@@ -44,6 +46,8 @@ Opens `Result/xcode_report.html` automatically.
 - **Archives** — manage via Xcode → Organizer. Keep the latest per shipped version (dSYMs for crash symbolication).
 
 Read-only — **nothing is deleted unless you copy a command and run it yourself.**
+
+![Xcode cleanup report — safety-tier actions](docs/screenshots/xcode-report.png)
 
 ---
 
@@ -92,6 +96,10 @@ Three switchable views (canvas-based):
 - **Sunburst** — concentric rings with percentage labels; inner = top-level, outer = deeper levels
 - **Partition** — columnar layout showing parent→child hierarchy with colored backgrounds and separator lines
 - **BoxMap** — nested treemap with proportional rectangles
+
+![Sunburst view](docs/screenshots/disk-sunburst.png)
+![Partition view](docs/screenshots/disk-partition.png)
+![BoxMap (treemap) view](docs/screenshots/disk-boxmap.png)
 
 All views support:
 - Click to drill into a folder, breadcrumb / back to navigate up
