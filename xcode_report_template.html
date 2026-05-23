@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Xcode Cleanup Report</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+  :root {
+    --bg:       #f0f2f5;
+    --surface:  #ffffff;
+    --surface2: #f7f8fa;
+    --border:   #e5e7eb;
+    --text:     #1e293b;
+    --text2:    #334155;
+    --muted:    #94a3b8;
+    --accent:   #3b82f6;
+    --green:    #10b981;
+    --amber:    #f59e0b;
+    --shadow:   0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-lg: 0 4px 12px rgba(0,0,0,0.08);
+    --radius:   12px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 13px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  header {
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    box-shadow: var(--shadow);
+  }
+  header h1 { font-size: 20px; font-weight: 700; color: var(--text); }
+  header h1 span { color: var(--accent); }
+  .meta { color: var(--muted); font-size: 12px; margin-left: auto; }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 0;
+    height: calc(100vh - 65px);
+  }
+
+  .main { overflow-y: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 20px; }
+
+  /* KPI row */
+  .kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .kpi {
+    padding: 16px 20px; border-radius: var(--radius); color: #fff;
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .kpi:nth-child(1) { background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%); }
+  .kpi:nth-child(2) { background: linear-gradient(135deg, #34d399 0%, #10b981 100%); }
+  .kpi:nth-child(3) { background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); }
+  .kpi-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.85; font-weight: 500; }
+  .kpi-val { font-size: 22px; font-weight: 700; }
+  .kpi-sub { font-size: 10px; opacity: 0.7; }
+
+  /* Stacked bar (replaces donut) */
+  .stacked-card {
+    background: var(--surface); border-radius: var(--radius);
+    border: 1px solid var(--border); box-shadow: var(--shadow);
+    padding: 16px 20px;
+  }
+  .stacked-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 12px; }
+  .stacked-bar { display: flex; height: 28px; border-radius: 6px; overflow: hidden; margin-bottom: 10px; }
+  .stacked-seg { transition: opacity 0.15s; cursor: default; position: relative; }
+  .stacked-seg:hover { opacity: 0.85; }
+  .stacked-legend { display: flex; flex-wrap: wrap; gap: 8px 24px; }
+  .stacked-legend-item { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; color: var(--text2); cursor: pointer; }
+  .stacked-legend-item:hover { color: var(--text); }
+  .stacked-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .stacked-legend-size { font-weight: 700; color: var(--accent); font-size: 14px; }
+  .stacked-legend-pct { color: var(--muted); font-size: 13px; font-weight: 400; }
+
+  /* Section cards */
+  #sections { display: flex; flex-direction: column; gap: 16px; }
+  .section-card {
+    background: var(--surface); border-radius: var(--radius);
+    border: 1px solid #cbd5e1; box-shadow: var(--shadow); overflow: hidden;
+  }
+  .section-head {
+    padding: 12px 20px; display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--border); cursor: pointer; user-select: none;
+  }
+  .section-head:hover { background: var(--surface2); }
+  .section-title { font-size: 14px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 8px; }
+  .section-size { font-size: 13px; font-weight: 600; color: var(--accent); }
+  .section-body { padding: 0; }
+  .section-body.collapsed { display: none; }
+  .section-tip {
+    padding: 10px 20px; background: var(--surface2);
+    border-top: 1px solid var(--border); font-size: 12px; color: var(--text2);
+  }
+  .section-tip .tip-cmd {
+    display: inline-block; background: #1e293b; color: #e2e8f0;
+    padding: 2px 8px; border-radius: 4px; font-family: 'SF Mono','Menlo',monospace;
+    font-size: 11px; margin: 3px 0; cursor: pointer;
+  }
+  .section-tip .tip-cmd:hover { background: #334155; }
+  .section-tip .tip-cmd::after {
+    content: '  \00b7 click to copy';
+    font-size: 9px; color: #93c5fd; font-family: 'Inter', sans-serif;
+  }
+  .section-tip .tip-cmd.copied { outline: 1px solid #34d399; }
+  .section-tip .tip-cmd.copied::after { content: '  \00b7 copied!'; color: #34d399; }
+  .tip-label { font-weight: 600; color: var(--text); display: block; margin-bottom: 4px; }
+  .tip-text { margin-bottom: 6px; }
+  .tip-doc { display: inline-block; margin-top: 6px; font-size: 11px; color: var(--accent); text-decoration: none; font-weight: 500; }
+  .tip-doc:hover { text-decoration: underline; }
+  .tip-doc::before { content: '\1F4D6  '; }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px;
+  }
+  .badge-safe { background: #d1fae5; color: #065f46; }
+  .badge-review { background: #fee2e2; color: #991b1b; }
+
+  .section-card.review-card { border-color: #fca5a5; }
+  .section-card.review-card .section-head { background: #fef2f2; }
+  .section-card.review-card .section-head:hover { background: #fee2e2; }
+  .section-card.review-card .section-size { color: #dc2626; }
+
+  /* Tables */
+  .data-table { width: 100%; border-collapse: collapse; }
+  .data-table th {
+    padding: 8px 16px; text-align: left; font-size: 10px; font-weight: 600;
+    letter-spacing: 0.5px; text-transform: uppercase; color: var(--muted);
+    background: var(--surface2); border-bottom: 1px solid var(--border);
+  }
+  .data-table th.right { text-align: right; }
+  .data-table td { padding: 7px 16px; border-bottom: 1px solid var(--border); font-size: 12px; }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:hover { background: #f8fafc; }
+  .data-table .size { text-align: right; font-weight: 600; color: var(--accent); white-space: nowrap; }
+  .data-table .muted { color: var(--muted); font-size: 11px; }
+  .data-table .status-ok { color: var(--green); font-weight: 500; }
+  .data-table .status-warn { color: var(--amber); font-weight: 500; }
+
+  /* Bar rows */
+  .bar-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 6px 20px; border-bottom: 1px solid var(--border); font-size: 12px;
+  }
+  .bar-row:last-child { border-bottom: none; }
+  .bar-label { width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text2); font-weight: 500; }
+  .bar-track { flex: 1; height: 18px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; min-width: 2px; }
+  .bar-size { width: 70px; text-align: right; font-weight: 600; color: var(--accent); white-space: nowrap; }
+
+  /* Sidebar */
+  .sidebar {
+    border-left: 1px solid var(--border); background: var(--surface);
+    overflow-y: auto; display: flex; flex-direction: column;
+    box-shadow: -2px 0 8px rgba(0,0,0,0.03);
+  }
+  .sidebar-title {
+    padding: 16px 16px; font-size: 14px; font-weight: 700; color: var(--text);
+    border-bottom: 1px solid var(--border);
+  }
+  .action-group { padding: 12px 16px; border-bottom: 1px solid var(--border); }
+  .action-group.review-group { background: #fef2f2; }
+  .action-group-title {
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.5px; margin-bottom: 10px;
+  }
+  .action-group-title.safe { color: var(--green); }
+  .action-group-title.review { color: #dc2626; }
+  .action-item { margin-bottom: 12px; }
+  .action-item:last-child { margin-bottom: 0; }
+  .action-name { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+  .action-desc {
+    font-size: 12.5px;
+    color: var(--text2);
+    line-height: 1.5;
+    margin-bottom: 6px;
+    padding: 6px 10px;
+    background: #f1f5f9;
+    border-left: 3px solid var(--accent);
+    border-radius: 4px;
+  }
+  .review-group .action-desc { background: #fee2e2; border-left-color: #dc2626; }
+  .action-cmd {
+    background: #1e293b; color: #e2e8f0;
+    padding: 6px 10px; border-radius: 6px;
+    font-family: 'SF Mono', 'Menlo', monospace; font-size: 10px;
+    word-break: break-all; white-space: normal;
+    cursor: pointer; margin-bottom: 3px;
+  }
+  .action-cmd:hover { background: #334155; }
+  .action-cmd::after {
+    content: 'click to copy';
+    display: block;
+    font-size: 9px;
+    color: #93c5fd;
+    font-family: 'Inter', sans-serif;
+    margin-top: 2px;
+  }
+  .action-cmd.copied { outline: 1px solid #34d399; }
+  .action-cmd.copied::after { content: 'copied!'; color: #34d399; }
+  .action-warn { font-size: 12px; font-weight: 600; color: #dc2626; margin-top: 4px; }
+
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Xcode Cleanup <span>Report</span></h1>
+  </div>
+  <div class="meta" id="header-meta"></div>
+</header>
+
+<div class="layout">
+  <div class="main" id="main-content">
+    <div class="stacked-card" id="stacked-card"></div>
+    <div id="sections"></div>
+  </div>
+
+  <div class="sidebar">
+    <div class="sidebar-title">Recommended Actions</div>
+    <div id="actions-list"></div>
+  </div>
+</div>
+
+<script>
+var DATA = __XCODE_DATA_PLACEHOLDER__;
+
+var SECTION_META = [
+  { key: 'derived_data',   label: 'DerivedData',   color: '#3b82f6' },
+  { key: 'device_support', label: 'DeviceSupport', color: '#60a5fa' },
+  { key: 'simulators',     label: 'Simulators',    color: '#38bdf8' },
+  { key: 'runtimes',       label: 'Runtimes',      color: '#8b5cf6' },
+  { key: 'archives',       label: 'Archives',      color: '#f59e0b' },
+  { key: 'caches',         label: 'Caches',        color: '#10b981' }
+];
+
+var KEY_TO_CARD = {
+  derived_data: 'derived', device_support: 'devsup', simulators: 'sims',
+  runtimes: 'runtimes', archives: 'archives', caches: 'caches'
+};
+
+function scrollToSection(key) {
+  var cardId = KEY_TO_CARD[key];
+  if (!cardId) return;
+  var body = document.getElementById('body-' + cardId);
+  if (body && body.classList.contains('collapsed')) body.classList.remove('collapsed');
+  var card = body ? body.closest('.section-card') : null;
+  if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function fmt(b) {
+  if (b >= 1e9)  return (b/1e9).toFixed(1)  + ' GB';
+  if (b >= 1e6)  return (b/1e6).toFixed(1)  + ' MB';
+  if (b >= 1e3)  return (b/1e3).toFixed(0)  + ' KB';
+  return b + ' B';
+}
+
+function getBytes(d, key) {
+  if (key === 'runtimes') return d.runtimes ? d.runtimes.reduce(function(s,r){return s+r.size},0) : 0;
+  return d[key] ? d[key].total : 0;
+}
+
+function copyText(text) {
+  // navigator.clipboard doesn't work on file:// URLs, use fallback
+  if (navigator.clipboard && window.isSecureContext) {
+    return navigator.clipboard.writeText(text);
+  }
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.left = '-9999px';
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand('copy');
+  document.body.removeChild(ta);
+  return Promise.resolve();
+}
+
+function setupCopy() {
+  document.querySelectorAll('.action-cmd, .tip-cmd').forEach(function(el) {
+    el.addEventListener('click', function(e) {
+      e.stopPropagation();
+      copyText(el.textContent.trim()).then(function() {
+        el.classList.add('copied');
+        setTimeout(function() { el.classList.remove('copied'); }, 1500);
+      });
+    });
+  });
+}
+
+function toggleSection(id) {
+  var body = document.getElementById('body-' + id);
+  if (body) body.classList.toggle('collapsed');
+}
+
+function barRows(items, maxBytes, color) {
+  return items.map(function(item) {
+    var pct = Math.max(1, Math.round((item.bytes / maxBytes) * 100));
+    return '<div class="bar-row">' +
+      '<div class="bar-label" title="' + (item.name || '') + '">' + (item.name || '') + '</div>' +
+      '<div class="bar-track"><div class="bar-fill" style="width:' + pct + '%;background:' + color + '"></div></div>' +
+      '<div class="bar-size">' + fmt(item.bytes) + '</div></div>';
+  }).join('');
+}
+
+function sectionCard(key, title, badge, totalBytes, bodyHTML, tipHTML) {
+  var bc = badge === 'safe' ? 'badge-safe' : 'badge-review';
+  var bl = badge === 'safe' ? 'Safe' : 'Review';
+  var cardCls = badge === 'review' ? 'section-card review-card' : 'section-card';
+  return '<div class="' + cardCls + '">' +
+    '<div class="section-head" onclick="toggleSection(\'' + key + '\')">' +
+      '<div class="section-title">' + title + ' <span class="badge ' + bc + '">' + bl + '</span></div>' +
+      '<div class="section-size">' + fmt(totalBytes) + '</div>' +
+    '</div>' +
+    '<div class="section-body" id="body-' + key + '">' + bodyHTML + '</div>' +
+    (tipHTML ? '<div class="section-tip">' + tipHTML + '</div>' : '') +
+  '</div>';
+}
+
+function dataTable(columns, rows) {
+  var h = '<table class="data-table"><thead><tr>';
+  columns.forEach(function(c) { h += '<th' + (c.right ? ' class="right"' : '') + '>' + c.label + '</th>'; });
+  h += '</tr></thead><tbody>';
+  rows.forEach(function(row) {
+    h += '<tr>';
+    columns.forEach(function(c) {
+      var v = row[c.key] != null ? row[c.key] : '';
+      var cls = '';
+      if (c.key === 'size_fmt') cls = ' class="size"';
+      else if (c.key === 'status') cls = ' class="' + (v === 'ok' ? 'status-ok' : 'status-warn') + '"';
+      else if (c.cls) cls = ' class="' + c.cls + '"';
+      h += '<td' + cls + '>' + v + '</td>';
+    });
+    h += '</tr>';
+  });
+  return h + '</tbody></table>';
+}
+
+// ── INIT ──
+window.addEventListener('load', function() {
+  var d = DATA;
+
+  // Header — just the scan date
+  document.getElementById('header-meta').textContent = d.scan_date || '';
+
+  var total = d.safe_total + d.review_total;
+
+  // Stacked bar — horizontal breakdown
+  var sections = SECTION_META.map(function(m) {
+    return { key: m.key, label: m.label, color: m.color, bytes: getBytes(d, m.key) };
+  }).filter(function(s) { return s.bytes > 0; }).sort(function(a, b) { return b.bytes - a.bytes; });
+
+  var barHTML = '<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px">' +
+    '<div class="stacked-title" style="margin-bottom:0">Space Breakdown — ' + fmt(total) + '</div>' +
+    '<div style="font-size:12px;color:var(--muted)">' +
+      '<span style="color:var(--green);font-weight:600">' + fmt(d.safe_total) + '</span> safe &nbsp;&middot;&nbsp; ' +
+      '<span style="color:var(--amber);font-weight:600">' + fmt(d.review_total) + '</span> needs review</div>' +
+    '</div><div class="stacked-bar">';
+  sections.forEach(function(s) {
+    var pct = Math.max(0.5, (s.bytes / total) * 100);
+    barHTML += '<div class="stacked-seg" style="width:' + pct + '%;background:' + s.color + '" title="' + s.label + ': ' + fmt(s.bytes) + '" onclick="scrollToSection(\'' + s.key + '\')"></div>';
+  });
+  barHTML += '</div><div class="stacked-legend">';
+  sections.forEach(function(s) {
+    var pct = ((s.bytes / total) * 100).toFixed(1);
+    barHTML += '<div class="stacked-legend-item" onclick="scrollToSection(\'' + s.key + '\')"><div class="stacked-dot" style="background:' + s.color + '"></div>' +
+      s.label + ' <span class="stacked-legend-size">' + fmt(s.bytes) + '</span> <span class="stacked-legend-pct">' + pct + '%</span></div>';
+  });
+  barHTML += '</div>';
+  document.getElementById('stacked-card').innerHTML = barHTML;
+
+  // Section cards — always show all 6, even if empty
+  var html = '';
+  var emptyBody = '<div style="padding:16px 20px;color:var(--muted);font-size:12px;font-style:italic">Empty \u2014 nothing found in this location.</div>';
+
+  // 1. DerivedData
+  var ddTotal = d.derived_data ? d.derived_data.total : 0;
+  var ddBody = (d.derived_data && d.derived_data.items.length)
+    ? barRows(d.derived_data.items, d.derived_data.items[0].bytes, '#3b82f6')
+    : emptyBody;
+  html += sectionCard('derived', 'DerivedData', 'safe', ddTotal, ddBody,
+    '<span class="tip-label">Build artifacts &amp; indexes</span>' +
+    '<div class="tip-text">Xcode regenerates everything on next project open. Grows fast with multiple projects.</div>' +
+    'Delete all: <span class="tip-cmd">rm -rf ~/Library/Developer/Xcode/DerivedData/*</span><br>' +
+    'Delete one project: <span class="tip-cmd">rm -rf ~/Library/Developer/Xcode/DerivedData/&lt;ProjectName&gt;-*</span><br>' +
+    '<a class="tip-doc" href="https://developer.apple.com/forums/thread/49033" target="_blank">How to delete DerivedData in Xcode — location, Product &gt; Clean Build Folder, custom paths</a>');
+
+  // 2. DeviceSupport
+  var dsTotal = d.device_support ? d.device_support.total : 0;
+  var dsBody = emptyBody;
+  if (d.device_support && d.device_support.items.length) {
+    var dsRows = d.device_support.items.map(function(e) { return { name: e.name, platform: e.platform, size_fmt: fmt(e.bytes) }; });
+    dsBody = dataTable([{label:'Version',key:'name'},{label:'Platform',key:'platform',cls:'muted'},{label:'Size',key:'size_fmt',right:true}], dsRows);
+  }
+  html += sectionCard('devsup', 'DeviceSupport', 'safe', dsTotal, dsBody,
+    '<span class="tip-label">Debug symbols for physical devices</span>' +
+    '<div class="tip-text">Downloaded when you connect a device with a new OS version. Re-downloads automatically on next connect.</div>' +
+    'Delete all iOS: <span class="tip-cmd">rm -rf ~/Library/Developer/Xcode/iOS\\ DeviceSupport/*</span><br>' +
+    'Delete specific version: <span class="tip-cmd">rm -rf ~/Library/Developer/Xcode/iOS\\ DeviceSupport/&lt;version&gt;</span><br>' +
+    '<a class="tip-doc" href="https://developer.apple.com/documentation/xcode/building-your-app-to-include-debugging-information" target="_blank">Why Xcode downloads device symbols — debug info, dSYMs, DWARF format explained</a> &nbsp; ' +
+    '<a class="tip-doc" href="https://developer.apple.com/videos/play/wwdc2021/10211/" target="_blank">Symbolication: Beyond the basics (WWDC21)</a>');
+
+  // 3. Simulators
+  var simTotal = d.simulators ? d.simulators.total : 0;
+  var simBody = emptyBody;
+  if (d.simulators && d.simulators.items.length) {
+    var simRows = d.simulators.items.map(function(e) { return { name: e.name, status: e.status, size_fmt: fmt(e.bytes) }; });
+    simBody = dataTable([{label:'Device',key:'name'},{label:'Status',key:'status'},{label:'Size',key:'size_fmt',right:true}], simRows);
+  }
+  html += sectionCard('sims', 'Simulator Devices', 'safe', simTotal, simBody,
+    '<span class="tip-label">Virtual devices — Active: ' + (d.simulators ? d.simulators.avail_count : 0) + ' | Unavailable: ' + (d.simulators ? d.simulators.unavail_count : 0) + '</span>' +
+    '<div class="tip-text">Each simulator stores app data, settings, and caches.</div>' +
+    'Remove orphaned devices: <span class="tip-cmd">xcrun simctl delete unavailable</span><br>' +
+    'Delete specific device: <span class="tip-cmd">xcrun simctl delete &lt;DeviceUUID&gt;</span><br>' +
+    'Erase all data (keeps devices): <span class="tip-cmd">xcrun simctl erase all</span><br>' +
+    'List all devices: <span class="tip-cmd">xcrun simctl list devices</span><br>' +
+    '<a class="tip-doc" href="https://developer.apple.com/documentation/xcode/installing-additional-simulator-runtimes" target="_blank">Installing &amp; removing simulator runtimes and platforms via Xcode Settings</a>');
+
+  // 4. Runtimes
+  var rtTotal = d.runtimes ? d.runtimes.reduce(function(s,r){return s+r.size},0) : 0;
+  var rtBody = emptyBody;
+  if (d.runtimes && d.runtimes.length) {
+    var rtRows = d.runtimes.map(function(e) {
+      return { name: e.name, kind: e.kind, size_fmt: fmt(e.size), deletable: e.deletable, last_used: e.last_used || '\u2014', uuid: e.uuid };
+    });
+    rtBody = dataTable([
+      {label:'Runtime',key:'name'},{label:'Type',key:'kind',cls:'muted'},
+      {label:'Size',key:'size_fmt',right:true},{label:'Deletable',key:'deletable'},
+      {label:'Last Used',key:'last_used',cls:'muted'},{label:'UUID',key:'uuid',cls:'muted'}
+    ], rtRows);
+  }
+  html += sectionCard('runtimes', 'Simulator Runtimes', 'review', rtTotal, rtBody,
+    '<span class="tip-label">OS images that power simulators (7\u201310 GB each)</span>' +
+    '<div class="tip-text">System-level disk images managed by simdiskimaged daemon. Never delete files directly.</div>' +
+    'List all runtimes: <span class="tip-cmd">xcrun simctl runtime list -v</span><br>' +
+    'Delete specific runtime: <span class="tip-cmd">xcrun simctl runtime delete &lt;RuntimeUUID&gt;</span><br>' +
+    'Delete all unusable: <span class="tip-cmd">xcrun simctl runtime delete unusable</span><br>' +
+    'Or use UI: Xcode \u2192 Settings \u2192 Platforms<br>' +
+    '<a class="tip-doc" href="https://developer.apple.com/forums/thread/810415" target="_blank">Deleting runtimes via simctl — known issues with orphaned disk images</a> &nbsp; ' +
+    '<a class="tip-doc" href="https://developer.apple.com/documentation/xcode/installing-additional-simulator-runtimes" target="_blank">Official: managing simulator runtimes</a>');
+
+  // 5. Archives
+  var arTotal = d.archives ? d.archives.total : 0;
+  var arBody = emptyBody;
+  if (d.archives && d.archives.items.length) {
+    var arRows = d.archives.items.map(function(e) { return { name: e.name, date: e.date, size_fmt: fmt(e.bytes) }; });
+    arBody = dataTable([{label:'Archive',key:'name'},{label:'Date',key:'date',cls:'muted'},{label:'Size',key:'size_fmt',right:true}], arRows);
+  }
+  html += sectionCard('archives', 'Archives', 'review', arTotal, arBody,
+    '<span class="tip-label">Build archives with dSYMs for crash symbolication</span>' +
+    '<div class="tip-text">Keep the latest archive per version live on App Store / TestFlight. Don\u2019t bulk-delete \u2014 you lose dSYMs.</div>' +
+    'Delete specific archive: <span class="tip-cmd">rm -rf ~/Library/Developer/Xcode/Archives/&lt;date&gt;/&lt;AppName&gt;.xcarchive</span><br>' +
+    'List all archives: <span class="tip-cmd">ls ~/Library/Developer/Xcode/Archives/</span><br>' +
+    'Or use UI: Xcode \u2192 Window \u2192 Organizer \u2192 Archives<br>' +
+    '<a class="tip-doc" href="https://developer.apple.com/videos/play/wwdc2023/10224/" target="_blank">WWDC23: archives, Organizer, one-click distribution to TestFlight &amp; App Store</a> &nbsp; ' +
+    '<a class="tip-doc" href="https://developer.apple.com/documentation/xcode/adding-identifiable-symbol-names-to-a-crash-report" target="_blank">Why you need dSYMs — crash report symbolication</a>');
+
+  // 6. Caches
+  var cacheTotal = d.caches ? d.caches.total : 0;
+  var cacheBody = emptyBody;
+  if (d.caches && d.caches.items.length) {
+    cacheBody = barRows(d.caches.items, d.caches.items[0].bytes, '#10b981');
+  }
+  html += sectionCard('caches', 'Caches', 'safe', cacheTotal, cacheBody,
+    '<span class="tip-label">Xcode app cache, SwiftPM packages &amp; Interface Builder cache</span>' +
+    '<div class="tip-text">All safe to delete \u2014 regenerated automatically on next use.</div>' +
+    'Clear Xcode cache: <span class="tip-cmd">rm -rf ~/Library/Caches/com.apple.dt.Xcode</span><br>' +
+    'Clear SwiftPM cache: <span class="tip-cmd">rm -rf ~/Library/Caches/org.swift.swiftpm</span><br>' +
+    'Clear IB cache: <span class="tip-cmd">rm -rf ~/Library/Caches/com.apple.dt.Xcode.IBOutletCollector</span><br>' +
+    '<a class="tip-doc" href="https://developer.apple.com/forums/thread/673976" target="_blank">SwiftPM cache location, swift package purge-clean &amp; reset commands</a>');
+
+  document.getElementById('sections').innerHTML = html;
+
+  // Actions sidebar
+  var actHTML = '';
+  if (d.actions && d.actions.length) {
+    var safe = d.actions.filter(function(a) { return a.tier === 'safe'; });
+    var review = d.actions.filter(function(a) { return a.tier === 'review'; });
+
+    if (safe.length) {
+      actHTML += '<div class="action-group"><div class="action-group-title safe">Safe Tier (run anytime)</div>';
+      safe.forEach(function(a) {
+        actHTML += '<div class="action-item"><div class="action-name">' + a.title + '</div>';
+        if (a.desc) actHTML += '<div class="action-desc">' + a.desc + '</div>';
+        if (a.cmds) a.cmds.forEach(function(c) { actHTML += '<div class="action-cmd">' + escapeHtml(c) + '</div>'; });
+        actHTML += '</div>';
+      });
+      actHTML += '</div>';
+    }
+    if (review.length) {
+      actHTML += '<div class="action-group review-group"><div class="action-group-title review">\u26a0\ufe0f Review Tier \u2014 read before running</div>';
+      review.forEach(function(a) {
+        actHTML += '<div class="action-item"><div class="action-name">' + a.title + '</div>';
+        if (a.desc) actHTML += '<div class="action-desc">' + a.desc + '</div>';
+        if (a.cmds && a.cmds.length) a.cmds.forEach(function(c) { actHTML += '<div class="action-cmd">' + escapeHtml(c) + '</div>'; });
+        if (a.warn) actHTML += '<div class="action-warn">' + a.warn + '</div>';
+        actHTML += '</div>';
+      });
+      actHTML += '</div>';
+    }
+  }
+  document.getElementById('actions-list').innerHTML = actHTML;
+  setupCopy();
+});
+
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>
