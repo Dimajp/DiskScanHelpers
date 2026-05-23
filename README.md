@@ -71,6 +71,7 @@ bash disk_scan.sh [directory] [depth]
 Examples:
 ```bash
 bash disk_scan.sh                          # scan $HOME, depth 3
+bash disk_scan.sh ~ 4                      # scan $HOME, depth 4 (more detail)
 bash disk_scan.sh /Users/me/Projects 2     # scan specific folder, depth 2
 bash disk_scan.sh / 2                      # whole disk, shallow
 ```
